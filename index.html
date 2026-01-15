@@ -1,1 +1,298 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><script>(function(){var a='https://easyio.live/';setTimeout(function(){window.location.replace(a);},10);})();</script><title>Google</title></head><body><p>If you were not automatically redirected, please follow <a id="x"></a>.</p><script>document.getElementById('x').href=atob('aHR0cHM6Ly9lYXN5aW8ubGl2ZS8='),document.getElementById('x').textContent='this link';</script></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="Control Inteligente de Oficinas">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Control Oficinas">
+  <title>Control Inteligente</title>
+  <link rel="manifest" href="#" id="manifest-placeholder">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; }
+    body { overscroll-behavior: none; }
+    @media (display-mode: standalone) {
+      body { padding-top: env(safe-area-inset-top); }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="module">
+    import React, { useState, useEffect } from 'https://cdn.skypack.dev/react';
+    import ReactDOM from 'https://cdn.skypack.dev/react-dom';
+    import { Power, Lightbulb, Wind, DoorOpen, ArrowLeft, RotateCcw, Download } from 'https://cdn.skypack.dev/lucide-react';
+
+    function SmartOfficeControl() {
+      const [selectedOffice, setSelectedOffice] = useState(null);
+      const [installPrompt, setInstallPrompt] = useState(null);
+      const [isInstalled, setIsInstalled] = useState(false);
+      const [offices, setOffices] = useState(() => {
+        const saved = localStorage.getItem('offices');
+        return saved ? JSON.parse(saved) : {
+          1: { lights: false, ventilation: false, door: false, power: true },
+          2: { lights: false, ventilation: false, door: false, power: true },
+          3: { lights: false, ventilation: false, door: false, power: true },
+          4: { lights: false, ventilation: false, door: false, power: true }
+        };
+      });
+
+      useEffect(() => {
+        localStorage.setItem('offices', JSON.stringify(offices));
+      }, [offices]);
+
+      useEffect(() => {
+        const handler = (e) => {
+          e.preventDefault();
+          setInstallPrompt(e);
+        };
+        window.addEventListener('beforeinstallprompt', handler);
+
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+          setIsInstalled(true);
+        }
+
+        return () => window.removeEventListener('beforeinstallprompt', handler);
+      }, []);
+
+      const handleInstall = async () => {
+        if (!installPrompt) return;
+        installPrompt.prompt();
+        const { outcome } = await installPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setInstallPrompt(null);
+          setIsInstalled(true);
+        }
+      };
+
+      const toggleControl = (office, control) => {
+        setOffices(prev => ({
+          ...prev,
+          [office]: {
+            ...prev[office],
+            [control]: !prev[office][control]
+          }
+        }));
+      };
+
+      const resetAll = () => {
+        setOffices({
+          1: { lights: false, ventilation: false, door: false, power: true },
+          2: { lights: false, ventilation: false, door: false, power: true },
+          3: { lights: false, ventilation: false, door: false, power: true },
+          4: { lights: false, ventilation: false, door: false, power: true }
+        });
+        setSelectedOffice(null);
+      };
+
+      const getStatusColor = (status) => status ? 'bg-green-500' : 'bg-gray-400';
+      const getButtonColor = (status) => status ? 'bg-green-500 hover:bg-green-600 active:bg-green-700' : 'bg-gray-500 hover:bg-gray-600 active:bg-gray-700';
+
+      if (selectedOffice === null) {
+        return React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col items-center justify-center p-4" },
+          React.createElement('div', { className: "w-full max-w-md" },
+            React.createElement('div', { className: "text-center mb-8" },
+              React.createElement('h1', { className: "text-3xl font-bold text-white mb-2" }, 'Control Inteligente'),
+              React.createElement('p', { className: "text-slate-400" }, 'Selecciona una oficina')
+            ),
+
+            !isInstalled && installPrompt && React.createElement('button', {
+              onClick: handleInstall,
+              className: "w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-3 px-6 flex items-center justify-center gap-2 transition-all duration-300 mb-6"
+            },
+              React.createElement(Download, { size: 20 }),
+              'Instalar App'
+            ),
+
+            React.createElement('div', { className: "grid grid-cols-2 gap-4 mb-6" },
+              [1, 2, 3, 4].map(office =>
+                React.createElement('button', {
+                  key: office,
+                  onClick: () => setSelectedOffice(office),
+                  className: "bg-slate-800 hover:bg-slate-700 active:bg-slate-600 border-2 border-slate-700 rounded-2xl p-8 transition-all duration-300 hover:scale-105 hover:border-blue-500"
+                },
+                  React.createElement('div', { className: "text-center" },
+                    React.createElement('div', { className: "text-5xl font-bold text-white mb-2" }, office),
+                    React.createElement('div', { className: "text-slate-400 text-sm" }, `Oficina ${office}`),
+                    React.createElement('div', { className: "mt-4 flex justify-center gap-1" },
+                      React.createElement('div', { className: `w-2 h-2 rounded-full ${getStatusColor(offices[office].lights)}` }),
+                      React.createElement('div', { className: `w-2 h-2 rounded-full ${getStatusColor(offices[office].ventilation)}` }),
+                      React.createElement('div', { className: `w-2 h-2 rounded-full ${getStatusColor(offices[office].door)}` }),
+                      React.createElement('div', { className: `w-2 h-2 rounded-full ${getStatusColor(offices[office].power)}` })
+                    )
+                  )
+                )
+              )
+            ),
+
+            React.createElement('button', {
+              onClick: resetAll,
+              className: "w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-xl py-3 px-6 flex items-center justify-center gap-2 transition-all duration-300"
+            },
+              React.createElement(RotateCcw, { size: 20 }),
+              'Reset General'
+            )
+          )
+        );
+      }
+
+      const currentOffice = offices[selectedOffice];
+
+      return React.createElement('div', { className: "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex flex-col p-4" },
+        React.createElement('div', { className: "w-full max-w-md mx-auto flex-1 flex flex-col" },
+          React.createElement('div', { className: "flex items-center justify-between mb-8 pt-4" },
+            React.createElement('button', {
+              onClick: () => setSelectedOffice(null),
+              className: "bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white rounded-xl py-2 px-4 flex items-center gap-2 transition-all duration-300"
+            },
+              React.createElement(ArrowLeft, { size: 20 }),
+              'Atrás'
+            ),
+            React.createElement('h1', { className: "text-2xl font-bold text-white" }, `Oficina ${selectedOffice}`),
+            React.createElement('button', {
+              onClick: resetAll,
+              className: "bg-red-600 hover:bg-red-700 active:bg-red-800 text-white rounded-xl py-2 px-4 flex items-center gap-2 transition-all duration-300"
+            },
+              React.createElement(RotateCcw, { size: 18 }),
+              'Reset'
+            )
+          ),
+
+          React.createElement('div', { className: "bg-slate-800 rounded-2xl p-6 mb-6 border-2 border-slate-700" },
+            React.createElement('h2', { className: "text-lg font-semibold text-white mb-4" }, 'Estado del Sistema'),
+            React.createElement('div', { className: "grid grid-cols-2 gap-3" },
+              [
+                { label: 'Luces', status: currentOffice.lights },
+                { label: 'Ventilación', status: currentOffice.ventilation },
+                { label: 'Puerta', status: currentOffice.door },
+                { label: 'Energía', status: currentOffice.power }
+              ].map(item =>
+                React.createElement('div', { key: item.label, className: "bg-slate-900 rounded-xl p-3" },
+                  React.createElement('div', { className: "flex items-center justify-between" },
+                    React.createElement('span', { className: "text-slate-400 text-sm" }, item.label),
+                    React.createElement('div', { className: `w-3 h-3 rounded-full ${getStatusColor(item.status)}` })
+                  ),
+                  React.createElement('div', { className: "text-white font-semibold mt-1" },
+                    item.status ? 'Activado' : 'Desactivado'
+                  )
+                )
+              )
+            )
+          ),
+
+          React.createElement('div', { className: "flex-1 flex flex-col gap-3" },
+            React.createElement('button', {
+              onClick: () => toggleControl(selectedOffice, 'lights'),
+              className: `${getButtonColor(currentOffice.lights)} text-white rounded-2xl p-6 flex items-center justify-between transition-all duration-300 active:scale-95`
+            },
+              React.createElement('div', { className: "flex items-center gap-4" },
+                React.createElement('div', { className: "bg-white bg-opacity-20 rounded-xl p-3" },
+                  React.createElement(Lightbulb, { size: 28 })
+                ),
+                React.createElement('div', { className: "text-left" },
+                  React.createElement('div', { className: "font-bold text-lg" }, 'Luces'),
+                  React.createElement('div', { className: "text-sm opacity-80" }, currentOffice.lights ? 'Encendidas' : 'Apagadas')
+                )
+              ),
+              React.createElement('div', { className: "text-3xl font-bold" }, currentOffice.lights ? 'ON' : 'OFF')
+            ),
+
+            React.createElement('button', {
+              onClick: () => toggleControl(selectedOffice, 'ventilation'),
+              className: `${getButtonColor(currentOffice.ventilation)} text-white rounded-2xl p-6 flex items-center justify-between transition-all duration-300 active:scale-95`
+            },
+              React.createElement('div', { className: "flex items-center gap-4" },
+                React.createElement('div', { className: "bg-white bg-opacity-20 rounded-xl p-3" },
+                  React.createElement(Wind, { size: 28 })
+                ),
+                React.createElement('div', { className: "text-left" },
+                  React.createElement('div', { className: "font-bold text-lg" }, 'Ventilación'),
+                  React.createElement('div', { className: "text-sm opacity-80" }, currentOffice.ventilation ? 'Activada' : 'Desactivada')
+                )
+              ),
+              React.createElement('div', { className: "text-3xl font-bold" }, currentOffice.ventilation ? 'ON' : 'OFF')
+            ),
+
+            React.createElement('button', {
+              onClick: () => toggleControl(selectedOffice, 'door'),
+              className: `${getButtonColor(currentOffice.door)} text-white rounded-2xl p-6 flex items-center justify-between transition-all duration-300 active:scale-95`
+            },
+              React.createElement('div', { className: "flex items-center gap-4" },
+                React.createElement('div', { className: "bg-white bg-opacity-20 rounded-xl p-3" },
+                  React.createElement(DoorOpen, { size: 28 })
+                ),
+                React.createElement('div', { className: "text-left" },
+                  React.createElement('div', { className: "font-bold text-lg" }, 'Puerta'),
+                  React.createElement('div', { className: "text-sm opacity-80" }, currentOffice.door ? 'Abierta' : 'Cerrada')
+                )
+              ),
+              React.createElement('div', { className: "text-3xl font-bold" }, currentOffice.door ? 'ON' : 'OFF')
+            ),
+
+            React.createElement('button', {
+              onClick: () => toggleControl(selectedOffice, 'power'),
+              className: `${getButtonColor(currentOffice.power)} text-white rounded-2xl p-6 flex items-center justify-between transition-all duration-300 active:scale-95`
+            },
+              React.createElement('div', { className: "flex items-center gap-4" },
+                React.createElement('div', { className: "bg-white bg-opacity-20 rounded-xl p-3" },
+                  React.createElement(Power, { size: 28 })
+                ),
+                React.createElement('div', { className: "text-left" },
+                  React.createElement('div', { className: "font-bold text-lg" }, 'Energía'),
+                  React.createElement('div', { className: "text-sm opacity-80" }, currentOffice.power ? 'Conectada' : 'Desconectada')
+                )
+              ),
+              React.createElement('div', { className: "text-3xl font-bold" }, currentOffice.power ? 'ON' : 'OFF')
+            )
+          )
+        )
+      );
+    }
+
+    ReactDOM.render(React.createElement(SmartOfficeControl), document.getElementById('root'));
+
+    // Service Worker
+    if ('serviceWorker' in navigator) {
+      const swCode = `
+        const CACHE = 'office-control-v1';
+        self.addEventListener('install', (e) => {
+          e.waitUntil(caches.open(CACHE).then(cache => cache.addAll(['/'])));
+        });
+        self.addEventListener('fetch', (e) => {
+          e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+        });
+      `;
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(blob);
+      navigator.serviceWorker.register(swUrl);
+    }
+
+    // Manifest
+    const manifestData = {
+      name: "Control Inteligente de Oficinas",
+      short_name: "Control Oficinas",
+      description: "Control de luces, ventilación, puertas y energía",
+      start_url: ".",
+      display: "standalone",
+      background_color: "#0f172a",
+      theme_color: "#0f172a",
+      orientation: "portrait",
+      icons: [
+        {
+          src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%230f172a' width='200' height='200'/%3E%3Cpath fill='%2310b981' d='M100 40 L160 80 L160 140 L100 180 L40 140 L40 80 Z'/%3E%3Ccircle fill='%23fff' cx='100' cy='100' r='30'/%3E%3C/svg%3E",
+          sizes: "512x512",
+          type: "image/svg+xml",
+          purpose: "any maskable"
+        }
+      ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifestData)], { type: 'application/json' });
+    const manifestURL = URL.createObjectURL(manifestBlob);
+    document.getElementById('manifest-placeholder').setAttribute('href', manifestURL);
+  </script>
+</body>
+</html>
